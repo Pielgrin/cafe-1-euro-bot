@@ -43,7 +43,15 @@ module.exports = (req, res) => {
                 sendQuickReply(psid, text, quick_replies);
             }
             else if (message && !message.is_echo) {
-                processMessage(event);
+                if(message.text){
+                    processMessage(event, false);
+                }
+                else if(message.attachments){
+                    processMessage(event, true);
+                }
+                else {
+                    console.log("WTTTTTTTFFFFFF ???")
+                }
             }
             else if (postback) {
                 processPostback(event);

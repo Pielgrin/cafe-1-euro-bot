@@ -1,12 +1,11 @@
 const keys = require('../config/keys')
 const apiAiClient = require('apiai')(keys.API_AI_TOKEN);
-const request = require('request');
 const sendMessage = require('../templates/sendMessage');
 const sendGenericMessage = require('../templates/sendGenericMessage');
 const sendAction = require('../templates/sendGenericMessage');
+const mongoose = require('mongoose');
 
-
-const sendSmallTalkMessage = () => {
+const sendSmallTalkMessage = (senderId, message) => {
     const apiaiSession = apiAiClient.textRequest(message, {sessionId: 'pielgrin_bot'});
 
     apiaiSession.on('response', (response) => {
@@ -53,52 +52,23 @@ const sendCafesCarousel = (senderId, cafes, userCoordinates) => {
         
         sendMessage(senderId, message)
     });
-
-    /*new Promise(() => {
-        request({
-            url: 'https://graph.facebook.com/v2.6/me/messages',
-            qs: { access_token: keys.FACEBOOK_ACCESS_TOKEN },
-            method: 'POST',
-            json: {
-                recipient: { id: senderId },
-                message: {
-                    attachment:{
-                        type: "template",
-                        payload: {
-                            template_type: "generic",
-                            elements: elements
-                        }
-                    }
-                },
-            }
-        }, function(error, response, body) {
-            console.log(error)
-    
-            if (!error && response.statusCode == 200) {
-                let message = "Voici ce que j'ai trouvé 👍"
-    
-                sendMessage(senderId, message)
-              }
-        })
-    })*/
 }
 
 
-module.exports = (event) => {
+module.exports = (event, hasAttachment) => {
     const senderId = event.sender.id;
     const message = event.message.text;
-    const userCoordinates = event.message.attachments[0].payload.coordinates;
+    
+    //let userCoordinates = event.message.attachments[0].payload.coordinates;
+    console.log(JSON.stringify(event.message))
+    //console.log(JSON.stringify(event.message.attachments[0].payload.coordinates))
 
-    console.log(JSON.stringify(event.message.attachments[0].payload.coordinates))
-
-    if(userCoordinates){
+    if(hasAttachment){
         console.log("j'ai bien reçu ta position")
+        
+        let userCoordinates = event.message.attachments[0].payload.coordinates;
         console.log(userCoordinates)
-
-        var MongoClient = require('mongodb').MongoClient;
-        var mongoose = require('mongoose'),
-            Schema = mongoose.Schema
-
+       
         var mongoDB = keys.mongoURI;
         mongoose.connect(mongoDB, { useNewUrlParser: true});
 

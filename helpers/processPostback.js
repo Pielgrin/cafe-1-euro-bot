@@ -3,8 +3,9 @@ const request = require('request');
 const sendAction = require('../templates/sendAction');
 const sendMessage = require('../templates/sendMessage');
 const sendQuickReplies = require('../templates/sendQuickReplies');
+const sendButtonMessage = require('../templates/sendButtonMessage');
 
-const user = (senderId, callback) => {
+/*const user = (senderId, callback) => {
     request({
         url: 'https://graph.facebook.com/' + senderId,
         qs: { fields: 'first_name, last_name, profile_pic', access_token: keys.FACEBOOK_ACCESS_TOKEN },
@@ -19,7 +20,7 @@ const user = (senderId, callback) => {
         }
         callback(body);
     })
-}
+}*/
 
 /*const askToSpeakToTeam = (senderId) => {
     return new Promise((resolve, reject) => {
@@ -63,7 +64,18 @@ const askLocation = (senderId) => {
         content_type: 'location'
     }]   
 
-    sendQuickReplies(senderId, text, quick_replies);
+    return sendQuickReplies(senderId, text, quick_replies);
+}
+
+const askReport = (senderId) => {
+    text = "Ce bot est actuellement en phase de test. Il est probable qu'un bug puisse se produire ou même si tu rencontres un problème avec un des cafés, n'hésite pas à nous le signaler via le bouton ci-dessous. Une option dans le menu est aussi disponible pour signaler un problème."
+    buttons = [{
+        type: "postback",
+        title: "Signaler un problème",
+        payload: "BUG_REPORT"
+    }]
+
+    return sendButtonMessage(senderId, text, buttons);
 }
 
 /*const sendPassThread = (senderId) => {
@@ -119,7 +131,9 @@ const sendGetStartedProcess = async (senderId) => {
         let message = greeting + "J'ai pour mission de t'aider à trouver les cafés à 1€ les plus proches de toi. Seule ta localisation 📍me permettra de t'aider dans cette quête."
         sendAction(senderId);
         sendMessage(senderId, message).then(() => {
-            askLocation(senderId)
+            askReport(senderId).then(() => {
+                askLocation(senderId)
+            });
         })
     })
 }
@@ -140,6 +154,10 @@ module.exports = (event) => {
             sendPassThread(senderId);
             break;
         */
+        case 'BUG_REPORT':
+            console.log("hello bug report")
+            sendMessage(senderId, "Je t'écoute, dis moi tout ...")
+            break;
         default:
             console.log("PAYLOAD FAILED");
     }
