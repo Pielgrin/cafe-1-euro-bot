@@ -155,7 +155,7 @@ module.exports = (event) => {
             break;
         */
         case 'BUG_REPORT':
-            console.log("hello bug report")
+            
             sendMessage(senderId, "Je t'écoute, dis moi tout ...")
             break;
         default:

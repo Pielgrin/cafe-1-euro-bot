@@ -4,6 +4,7 @@ const sendMessage = require('../templates/sendMessage');
 const sendGenericMessage = require('../templates/sendGenericMessage');
 const sendAction = require('../templates/sendGenericMessage');
 const mongoose = require('mongoose');
+const Cafe = require('../models/Cafe')
 
 const sendSmallTalkMessage = (senderId, message) => {
     const apiaiSession = apiAiClient.textRequest(message, {sessionId: 'pielgrin_bot'});
@@ -48,8 +49,7 @@ const sendCafesCarousel = (senderId, cafes, userCoordinates) => {
 
     sendAction(senderId);
     sendGenericMessage(senderId, elements).then(() => {
-        let message = "Voici ce que j'ai trouvé 👍"
-        
+        elements.length != 0 ? message = "Voici ce que j'ai trouvé 👍" : message = "Je n'ai rien trouvé près de ta localisation :/"
         sendMessage(senderId, message)
     });
 }
@@ -59,9 +59,7 @@ module.exports = (event, hasAttachment) => {
     const senderId = event.sender.id;
     const message = event.message.text;
     
-    //let userCoordinates = event.message.attachments[0].payload.coordinates;
     console.log(JSON.stringify(event.message))
-    //console.log(JSON.stringify(event.message.attachments[0].payload.coordinates))
 
     if(hasAttachment){
         console.log("j'ai bien reçu ta position")
@@ -69,27 +67,20 @@ module.exports = (event, hasAttachment) => {
         let userCoordinates = event.message.attachments[0].payload.coordinates;
         console.log(userCoordinates)
        
-        var mongoDB = keys.mongoURI;
-        mongoose.connect(mongoDB, { useNewUrlParser: true});
-
-        var db = mongoose.connection;
-        db.on('error', console.error.bind(console, 'MongoDB connection error:'));
-
-        db.once('open', function(){
-            db.collection("cafes").find({
-                geometry: {
-                    $nearSphere: {
-                        $geometry: {
-                            type: "Point",
-                            coordinates: [ userCoordinates.long, userCoordinates.lat ]
-                        },
-                        $maxDistance: 10000
-                    }
+        Cafe.find({
+            geometry: {
+                $nearSphere: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [ userCoordinates.long, userCoordinates.lat ]
+                    },
+                    $maxDistance: 10000
                 }
-            }).limit(5).toArray(function(err, items) {
-                if(err) callback(err);
-                sendCafesCarousel(senderId, items, userCoordinates);
-            })
+            }
+        }).limit(5).exec(function(err, items) {
+            if(err) callback(err);
+            //console.log(JSON.stringify(items))
+            sendCafesCarousel(senderId, items, userCoordinates);
         })
     }
 

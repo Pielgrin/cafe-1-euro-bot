@@ -1,8 +1,15 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const app = express();
+const keys = require('./config/keys')
+const mongoose = require('mongoose');
 const verificationController = require('./controllers/verification');
 const messageWebhookController = require('./controllers/messageWebhook')
+require('./models/Cafe');
+
+
+mongoose.connect(keys.mongoURI, { useNewUrlParser: true});
+
+const app = express();
 
 const PORT = process.env.PORT || 3000;
 
