@@ -5,9 +5,11 @@ const sendGenericMessage = require('../templates/sendGenericMessage');
 const sendAction = require('../templates/sendGenericMessage');
 const mongoose = require('mongoose');
 const Cafe = require('../models/Cafe')
+const User = require('../models/User')
+
 
 const sendSmallTalkMessage = (senderId, message) => {
-    const apiaiSession = apiAiClient.textRequest(message, {sessionId: 'pielgrin_bot'});
+    const apiaiSession = apiAiClient.textRequest(message, { sessionId: 'pielgrin_bot' });
 
     apiaiSession.on('response', (response) => {
         const result = response.result.fulfillment.speech;
@@ -19,19 +21,19 @@ const sendSmallTalkMessage = (senderId, message) => {
     apiaiSession.end();
 }
 
-const sendCafesCarousel = (senderId, cafes, userCoordinates) => {  
+const sendCafesCarousel = (senderId, cafes, userCoordinates) => {
     var elements = []
-    cafes.forEach(function(cafe) {
+    cafes.forEach(function (cafe) {
         let zoom = 15;
         let size = "500x300";
         let maptype = "roadmap";
         let address = cafe.fields.nom_du_cafe + " " + cafe.fields.adresse + " " + "Paris" + " " + cafe.fields.arrondissement
         let markers = "color:red%7C" + cafe.geometry.coordinates[1] + "," + cafe.geometry.coordinates[0];
-        let image = "https://maps.googleapis.com/maps/api/staticmap?zoom="+zoom+"&size="+size+"&maptype="+maptype+"&markers="+markers+"&key="+keys.API_GOOGLE_MAP_STATIC_VIEW
+        let image = "https://maps.googleapis.com/maps/api/staticmap?zoom=" + zoom + "&size=" + size + "&maptype=" + maptype + "&markers=" + markers + "&key=" + keys.API_GOOGLE_MAP_STATIC_VIEW
 
         let localisation = userCoordinates.lat + "," + userCoordinates.long
-        let url = "https://www.google.com/maps?saddr="+localisation+"&daddr="+address+"&mode=walking"
-        
+        let url = "https://www.google.com/maps?saddr=" + localisation + "&daddr=" + address + "&mode=walking"
+
         element = {
             title: cafe.fields.nom_du_cafe,
             image_url: image,
@@ -54,34 +56,51 @@ const sendCafesCarousel = (senderId, cafes, userCoordinates) => {
     });
 }
 
+const isUserReportingABug = async (senderId) => {
+    try {
+        let user = await User.findOne({ facebook_id: senderId }).exec();
+        console.log(user)
+        return user.is_reporting_a_bug;
+    } catch (err) {
+        return err
+    }
+}
 
-module.exports = (event, hasAttachment) => {
+
+module.exports = async (event, hasAttachment) => {
     const senderId = event.sender.id;
     const message = event.message.text;
-    
+    var _isUserReportingABug = await isUserReportingABug(senderId);
     console.log(JSON.stringify(event.message))
 
-    if(hasAttachment){
+    if (hasAttachment) {
         console.log("j'ai bien reçu ta position")
-        
+
         let userCoordinates = event.message.attachments[0].payload.coordinates;
         console.log(userCoordinates)
-       
+
         Cafe.find({
             geometry: {
                 $nearSphere: {
                     $geometry: {
                         type: "Point",
-                        coordinates: [ userCoordinates.long, userCoordinates.lat ]
+                        coordinates: [userCoordinates.long, userCoordinates.lat]
                     },
                     $maxDistance: 10000
                 }
             }
-        }).limit(5).exec(function(err, items) {
-            if(err) callback(err);
+        }).limit(5).exec(function (err, items) {
+            if (err) callback(err);
             //console.log(JSON.stringify(items))
             sendCafesCarousel(senderId, items, userCoordinates);
         })
+    }
+
+    else if (_isUserReportingABug) {
+        // Mettre en place action de gestion du message de signalement
+        // Remettre user.is_reporting_a_bug à false
+
+        sendMessage(senderId, "mdrrr")
     }
 
     else {

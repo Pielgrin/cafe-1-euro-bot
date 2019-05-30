@@ -4,6 +4,8 @@ const sendAction = require('../templates/sendAction');
 const sendMessage = require('../templates/sendMessage');
 const sendQuickReplies = require('../templates/sendQuickReplies');
 const sendButtonMessage = require('../templates/sendButtonMessage');
+const mongoose = require('mongoose');
+const User = require('../models/User')
 
 /*const user = (senderId, callback) => {
     request({
@@ -58,11 +60,44 @@ const sendButtonMessage = require('../templates/sendButtonMessage');
     })
 }*/
 
+const insertOrUpdateUser = (senderId) => {
+    request({
+        url: "https://graph.facebook.com/v2.6/" + senderId,
+        qs: {
+            access_token: keys.FACEBOOK_ACCESS_TOKEN,
+            fields: "first_name,last_name,locale,timezone"
+        },
+        method: "GET"
+    }, function (error, response, body) {
+        if (error) {
+            console.error("Error getting user name : " + error);
+        } else {
+            let bodyObject = JSON.parse(body);
+            console.log(bodyObject);
+            first_name = bodyObject.first_name;
+            last_name = bodyObject.last_name;
+            locale = bodyObject.locale;
+            timezone = bodyObject.timezone;
+            //profile_pic = bodyObject.first_name;
+            var user = { facebook_id: senderId, first_name: first_name, last_name: last_name, locale: locale, timezone: timezone, last_message: Date.now(), is_reporting_a_bug: false }
+            User.findOneAndUpdate(
+                { facebook_id: senderId },
+                user,
+                { upsert: true, new: true, runValidators: true },
+                function (err, user) {
+                    if (err) console.log(err)
+                }
+            )
+        }
+    });
+}
+
+
 const askLocation = (senderId) => {
     text = "Quelle est ta localisation ?"
     quick_replies = [{
         content_type: 'location'
-    }]   
+    }]
 
     return sendQuickReplies(senderId, text, quick_replies);
 }
@@ -138,15 +173,27 @@ const sendGetStartedProcess = async (senderId) => {
     })
 }
 
+const setUserIsBugReporting = (senderId) => {
+    var user = { is_reporting_a_bug: true }
+    User.findOneAndUpdate(
+        { facebook_id: senderId },
+        user,
+        { new: true, runValidators: true },
+        function (err, user) {
+            if (err) console.log(err)
+        }
+    )
+}
+
 module.exports = (event) => {
     const senderId = event.sender.id;
     const payload = event.postback.payload;
 
     switch (payload) {
         case 'GET_STARTED_PAYLOAD':
-           /* console.log(JSON.stringify(user(senderId, () => { })));
-            console.log(senderId);*/
-
+            /* console.log(JSON.stringify(user(senderId, () => { })));
+             console.log(senderId);*/
+            insertOrUpdateUser(senderId);
             sendGetStartedProcess(senderId);
             break;
 
@@ -155,7 +202,7 @@ module.exports = (event) => {
             break;
         */
         case 'BUG_REPORT':
-            
+            setUserIsBugReporting(senderId);
             sendMessage(senderId, "Je t'écoute, dis moi tout ...")
             break;
         default:
