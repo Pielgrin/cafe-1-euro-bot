@@ -3,9 +3,10 @@ const apiAiClient = require('apiai')(keys.API_AI_TOKEN);
 const sendMessage = require('../templates/sendMessage');
 const sendGenericMessage = require('../templates/sendGenericMessage');
 const sendAction = require('../templates/sendGenericMessage');
-const mongoose = require('mongoose');
-const Cafe = require('../models/Cafe')
-const User = require('../models/User')
+const sendEmail = require('../templates/sendEmail');
+var nodemailer = require('nodemailer');
+const Cafe = require('../models/Cafe');
+const controlUser = require('../helpers/controlUser'); 
 
 
 const sendSmallTalkMessage = (senderId, message) => {
@@ -56,21 +57,11 @@ const sendCafesCarousel = (senderId, cafes, userCoordinates) => {
     });
 }
 
-const isUserReportingABug = async (senderId) => {
-    try {
-        let user = await User.findOne({ facebook_id: senderId }).exec();
-        console.log(user)
-        return user.is_reporting_a_bug;
-    } catch (err) {
-        return err
-    }
-}
-
 
 module.exports = async (event, hasAttachment) => {
     const senderId = event.sender.id;
     const message = event.message.text;
-    var _isUserReportingABug = await isUserReportingABug(senderId);
+    var _isUserReportingABug = await controlUser.getUserIsReportingABug(senderId);
     console.log(JSON.stringify(event.message))
 
     if (hasAttachment) {
@@ -97,10 +88,24 @@ module.exports = async (event, hasAttachment) => {
     }
 
     else if (_isUserReportingABug) {
-        // Mettre en place action de gestion du message de signalement
-        // Remettre user.is_reporting_a_bug à false
+        var transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: 'piepellegrin@gmail.com',
+                pass: keys.MAIL_PASSWORD
+            }
+        });
 
-        sendMessage(senderId, "mdrrr")
+        var mailOptions = {
+            from: 'piepellegrin@gmail.com',
+            to: 'pierre.pellegrin@viacesi.fr',
+            subject: 'BUG REPORT - 1€ le café - Chatbot',
+            text: message
+        }
+        controlUser.setUserIsReportingABug(senderId, false)
+        sendEmail(transporter, mailOptions);
+        sendMessage(senderId, "C'est noté, merci beaucoup pour ton signalement ! :)")
+
     }
 
     else {
