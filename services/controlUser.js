@@ -56,6 +56,32 @@ const insertOrUpdateUser = (senderId) => {
     });
 }
 
-module.exports.setUserIsReportingABug = setUserIsReportingABug;
-module.exports.getUserIsReportingABug = getUserIsReportingABug;
-module.exports.insertOrUpdateUser = insertOrUpdateUser;
+const insertOrUpdateLastLocation = (senderId, location) => {
+    var user = { last_location: location }
+    User.findOneAndUpdate(
+        { facebook_id: senderId },
+        user,
+        { new: true, runValidators: true },
+        function (err, user) {
+            if (err) console.log(err)
+        }
+    )
+}
+
+const getUserPreviousLocation = async (senderId) => {
+    try {
+        let user = await User.findOne({ facebook_id: senderId }).exec();
+        console.log(user)
+        return user.last_location;
+    } catch (err) {
+        return err
+    }
+}
+
+module.exports = {
+    setUserIsReportingABug,
+    getUserIsReportingABug,
+    insertOrUpdateUser,
+    insertOrUpdateLastLocation,
+    getUserPreviousLocation
+}

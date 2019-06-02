@@ -1,6 +1,5 @@
-const processMessage = require('../helpers/processMessage');
-const processPostback = require('../helpers/processPostBack');
-//const sendQuickReply = require('../helpers/quickReply');
+const processMessage = require('../services/processMessage');
+const processPostback = require('../services/processPostBack');
 
 module.exports = (req, res) => {
     const webhook_events = req.body.entry[0];
@@ -31,7 +30,7 @@ module.exports = (req, res) => {
             message = event.message,
             postback = event.postback;
 
-            console.log(message)
+            console.log(JSON.stringify(event))
             if(event.pass_thread_control) {
                 text = "L'opérateur a décidé de mettre fin à la conversation. Votre assistant personnel prend donc le relais ! :)"
                 quick_replies = [{
@@ -42,19 +41,20 @@ module.exports = (req, res) => {
 
                 sendQuickReply(psid, text, quick_replies);
             }
+            else if (postback) {
+                processPostback(event);
+            }
             else if (message && !message.is_echo) {
                 if(message.text){
                     processMessage(event, false);
                 }
-                else if(message.attachments){
+                else if(message.attachments[0].type == "location"){
                     processMessage(event, true);
+                    //processLocation(event, true);
                 }
                 else {
                     console.log("WTTTTTTTFFFFFF ???")
                 }
-            }
-            else if (postback) {
-                processPostback(event);
             }
         })
     }

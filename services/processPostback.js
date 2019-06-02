@@ -2,84 +2,8 @@ const keys = require('../config/keys');
 const request = require('request');
 const sendAction = require('../templates/sendAction');
 const sendMessage = require('../templates/sendMessage');
-const sendQuickReplies = require('../templates/sendQuickReplies');
-const sendButtonMessage = require('../templates/sendButtonMessage');
-const mongoose = require('mongoose');
-const controlUser = require('../helpers/controlUser');
-
-/*const user = (senderId, callback) => {
-    request({
-        url: 'https://graph.facebook.com/' + senderId,
-        qs: { fields: 'first_name, last_name, profile_pic', access_token: keys.FACEBOOK_ACCESS_TOKEN },
-        method: 'GET'
-    }, (error, response, body) => {
-        console.log(body)
-        if (!error && response.statusCode === 200) {
-            console.log('Message sent succesfully');
-        }
-        else {
-            console.error('Error: ' + error);
-        }
-        callback(body);
-    })
-}*/
-
-/*const askToSpeakToTeam = (senderId) => {
-    return new Promise((resolve, reject) => {
-        request({
-            url: 'https://graph.facebook.com/v2.6/me/messages',
-            qs: { access_token: keys.FACEBOOK_ACCESS_TOKEN },
-            method: 'POST',
-            json: {
-                recipient: { id: senderId },
-                message: {
-                    attachment: {
-                        type: "template",
-                        payload: {
-                            template_type: "button",
-                            text: "Si vous souhaitez contacter mon équipe humaine, je peux leur transmettre un message. Cette fonctionnalité est également disponible depuis le menu",
-                            buttons: [
-                                {
-                                    type: "postback",
-                                    title: "Contacter l'équipe",
-                                    payload: "HANDOVER_PAYLOAD"
-                                }
-                            ]
-                        }
-                    }
-                },
-            }
-        }, function (error, response, body) {
-            if (error) {
-                console.log("Error sending message: " + response.error);
-                reject(response.error);
-            } else {
-                resolve(body);
-            }
-        })
-    })
-}*/
-
-
-const askLocation = (senderId) => {
-    text = "Quelle est ta localisation ?"
-    quick_replies = [{
-        content_type: 'location'
-    }]
-
-    return sendQuickReplies(senderId, text, quick_replies);
-}
-
-const askReport = (senderId) => {
-    text = "Ce bot est actuellement en phase de test. Il est probable qu'un bug puisse se produire ou même si tu rencontres un problème avec un des cafés, n'hésite pas à nous le signaler via le bouton ci-dessous. Une option dans le menu est aussi disponible pour signaler un problème."
-    buttons = [{
-        type: "postback",
-        title: "Signaler un problème",
-        payload: "BUG_REPORT"
-    }]
-
-    return sendButtonMessage(senderId, text, buttons);
-}
+const messageHelper = require('../helpers/messageHelper');
+const controlUser = require('./controlUser');
 
 /*const sendPassThread = (senderId) => {
     return new Promise(() => {
@@ -134,8 +58,10 @@ const sendGetStartedProcess = async (senderId) => {
         let message = greeting + "J'ai pour mission de t'aider à trouver les cafés à 1€ les plus proches de toi. Seule ta localisation 📍me permettra de t'aider dans cette quête."
         sendAction(senderId);
         sendMessage(senderId, message).then(() => {
-            askReport(senderId).then(() => {
-                askLocation(senderId)
+            sendAction(senderId)
+            messageHelper.askReport(senderId).then(() => {
+                sendAction(senderId)
+                messageHelper.askLocation(senderId)
             });
         })
     })
@@ -151,16 +77,21 @@ module.exports = (event) => {
             sendGetStartedProcess(senderId);
             break;
 
+        case 'RESTART':
+                messageHelper.askLocation(senderId, "Ravi de te revoir")
+            break;
+
         /*case 'HANDOVER_PAYLOAD':
             sendPassThread(senderId);
             break;
-        */
+        */  
+
         case 'BUG_REPORT':
             controlUser.setUserIsReportingABug(senderId, true);
+            sendAction(senderId);
             sendMessage(senderId, "Je t'écoute, dis moi tout ...")
             break;
         default:
             console.log("PAYLOAD FAILED");
     }
 }
-

@@ -9,7 +9,8 @@ const userSchema = new Schema({
     last_message: { type: Date, default: Date.now },
     locale: String,
     timezone: Number,
-    is_reporting_a_bug: { type: Boolean, default: false}
+    is_reporting_a_bug: { type: Boolean, default: false},
+    last_location: { lat: Number, long: Number}
 });
 
 module.exports = mongoose.model('users', userSchema);
