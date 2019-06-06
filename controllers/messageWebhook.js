@@ -1,5 +1,5 @@
 const processMessage = require('../services/processMessage');
-const processPostback = require('../services/processPostBack');
+const processPostback = require('../services/processPostback');
 
 module.exports = (req, res) => {
     const webhook_events = req.body.entry[0];
