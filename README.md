@@ -7,6 +7,8 @@ Please refer to this tutoriel if you want to submit your chatbot to facebook mes
 
 Small talk is enable thanks to Dialogflow API.
 
+/!\ Unfortunately, Facebook has deprecated the location quick reply function on July 29, 2019. Therefore this project can't work anymore. /!\ 
+
 Screenshots: 
 ![](images/IMG_1002.png)
 ![](images/IMG_0961.png)
