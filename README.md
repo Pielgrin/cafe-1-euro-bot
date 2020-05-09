@@ -5,6 +5,8 @@ Data provide from this dataset https://www.data.gouv.fr/fr/datasets/liste-des-ca
 
 Please refer to this tutoriel if you want to submit your chatbot to facebook messenger platform : https://medium.com/crowdbotics/how-to-create-your-very-own-facebook-messenger-bot-with-dialogflow-and-node-js-in-just-one-day-f5f2f5792be5.
 
+Small talk is enable thanks to Dialogflow API.
+
 Screenshots: 
 ![](images/IMG_1002.png)
 ![](images/IMG_0961.png)
